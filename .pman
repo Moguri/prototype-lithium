@@ -1,0 +1,12 @@
+[build]
+asset_dir = assets/
+export_dir = game/assets/
+
+[run]
+auto_build = True
+main_file = game/main.py
+
+[general]
+render_plugin = 
+name = Game
+
