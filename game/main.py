@@ -9,6 +9,8 @@ from direct.showbase.DirectObject import DirectObject
 import panda3d.core as p3d
 import blenderpanda
 from bamboo.ecs import ECSManager, Entity
+from bamboo.inputmapper import InputMapper
+
 from lithium import components
 
 
@@ -49,8 +51,8 @@ class GameState(DirectObject):
             else:
                 char.movement = p3d.LVector3(0, 0, 0)
 
-        self.accept('space', update_movement, [True])
-        self.accept('space-up', update_movement, [False])
+        self.accept('move', update_movement, [True])
+        self.accept('move-up', update_movement, [False])
 
     def update(self, dt):
         pass
@@ -61,6 +63,7 @@ class GameApp(ShowBase):
         ShowBase.__init__(self)
         blenderpanda.init(self)
         self.accept('escape', sys.exit)
+        self.inputmapper = InputMapper('config/input.conf')
 
         # Setup ECS
         self.ecsmanager = ECSManager()
