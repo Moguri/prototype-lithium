@@ -41,6 +41,11 @@ class GameState(DirectObject):
 
         self.player = base.template_factory.make_character('character.bam', level_start.get_pos())
 
+        # Attach camera to player
+        playernp = self.player.get_component('NODEPATH').nodepath
+        self.camera = base.ecsmanager.create_entity()
+        self.camera.add_component(components.Camera3PComponent(base.camera, playernp))
+
         # Attach assets to the scene graph
         self.level.reparent_to(base.render)
 
@@ -63,12 +68,14 @@ class GameApp(ShowBase):
         ShowBase.__init__(self)
         blenderpanda.init(self)
         self.accept('escape', sys.exit)
+        self.disableMouse()
         self.inputmapper = InputMapper('config/input.conf')
 
         # Setup ECS
         self.ecsmanager = ECSManager()
         systems = [
             components.CharacterSystem(),
+            components.Camera3PSystem(),
         ]
 
         for system in systems:

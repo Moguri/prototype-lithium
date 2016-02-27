@@ -61,6 +61,20 @@ class CharacterComponent(ecs.Component):
         self.movement = p3d.LVector3(0, 0, 0)
 
 
+class Camera3PComponent(ecs.Component):
+    __slots__ = [
+        'target',
+        'camera',
+    ]
+
+    typeid = 'CAMERA3P'
+
+    def __init__(self, camera, targetnp):
+        super().__init__()
+
+        self.camera = camera
+        self.target = targetnp
+
 class CharacterSystem(ecs.System):
     component_types = [
         'CHARACTER',
@@ -71,6 +85,20 @@ class CharacterSystem(ecs.System):
             np = char.entity.get_component('NODEPATH').nodepath
 
             np.set_pos(np.get_pos() + char.movement)
+
+
+class Camera3PSystem(ecs.System):
+    component_types = [
+        'CAMERA3P',
+    ]
+
+    def update(self, dt, components):
+        for camcomp in components['CAMERA3P']:
+            cam = camcomp.camera
+            target = camcomp.target
+
+            cam.set_pos(target, p3d.LVector3(0, -10, 3))
+            cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 2))
 
 
 class PhysicsSystem(ecs.System):
