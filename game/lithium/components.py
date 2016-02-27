@@ -52,6 +52,7 @@ class NodePathComponent(ecs.Component):
 class CharacterComponent(ecs.Component):
     __slots__ = [
         'movement',
+        'move_speed',
     ]
 
     typeid = 'CHARACTER'
@@ -59,6 +60,7 @@ class CharacterComponent(ecs.Component):
     def __init__(self):
         super().__init__()
         self.movement = p3d.LVector3(0, 0, 0)
+        self.move_speed = 10
 
 
 class Camera3PComponent(ecs.Component):
@@ -84,7 +86,8 @@ class CharacterSystem(ecs.System):
         for char in components['CHARACTER']:
             np = char.entity.get_component('NODEPATH').nodepath
 
-            np.set_pos(np.get_pos() + char.movement)
+            move_vec = char.movement * char.move_speed * dt
+            np.set_pos(np.get_pos() + move_vec)
 
 
 class Camera3PSystem(ecs.System):
@@ -97,7 +100,7 @@ class Camera3PSystem(ecs.System):
             cam = camcomp.camera
             target = camcomp.target
 
-            cam.set_pos(target, p3d.LVector3(0, -10, 3))
+            cam.set_pos(target, p3d.LVector3(0, -10, 2))
             cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 2))
 
 

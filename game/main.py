@@ -49,15 +49,31 @@ class GameState(DirectObject):
         # Attach assets to the scene graph
         self.level.reparent_to(base.render)
 
-        def update_movement(activate):
+        def update_movement(direction, activate):
             char = self.player.get_component('CHARACTER')
-            if activate:
-                char.movement = p3d.LVector3(1, 0, 0)
-            else:
-                char.movement = p3d.LVector3(0, 0, 0)
+            move_delta = p3d.LVector3(0, 0, 0)
 
-        self.accept('move', update_movement, [True])
-        self.accept('move-up', update_movement, [False])
+            if direction == 'forward':
+                move_delta.set_y(1)
+            elif direction == 'backward':
+                move_delta.set_y(-1)
+            elif direction == 'left':
+                move_delta.set_x(-1)
+            elif direction == 'right':
+                move_delta.set_x(1)
+
+            if not activate:
+                move_delta *= -1
+
+            char.movement += move_delta
+        self.accept('move-forward', update_movement, ['forward', True])
+        self.accept('move-forward-up', update_movement, ['forward', False])
+        self.accept('move-backward', update_movement, ['backward', True])
+        self.accept('move-backward-up', update_movement, ['backward', False])
+        self.accept('move-left', update_movement, ['left', True])
+        self.accept('move-left-up', update_movement, ['left', False])
+        self.accept('move-right', update_movement, ['right', True])
+        self.accept('move-right-up', update_movement, ['right', False])
 
     def update(self, dt):
         pass
