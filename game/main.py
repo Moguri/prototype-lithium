@@ -49,6 +49,7 @@ class GameState(DirectObject):
         # Attach assets to the scene graph
         self.level.reparent_to(base.render)
 
+        # Player movement
         def update_movement(direction, activate):
             char = self.player.get_component('CHARACTER')
             move_delta = p3d.LVector3(0, 0, 0)
@@ -75,8 +76,25 @@ class GameState(DirectObject):
         self.accept('move-right', update_movement, ['right', True])
         self.accept('move-right-up', update_movement, ['right', False])
 
+        # Mouse look
+        props = p3d.WindowProperties()
+        props.set_cursor_hidden(True)
+        props.set_mouse_mode(p3d.WindowProperties.M_confined)
+        base.win.request_properties(props)
+
+        # reset mouse to center
+        props = base.win.get_properties()
+        base.win.move_pointer(0, int(props.get_x_size() / 2), int(props.get_y_size()))
+
     def update(self, dt):
-        pass
+        # Mouse look
+        char = self.player.get_component('CHARACTER')
+        if base.mouseWatcherNode.has_mouse():
+            char.rotation -= base.mouseWatcherNode.get_mouse_x() * dt * 1000
+
+            # reset mouse to center
+            props = base.win.get_properties()
+            base.win.move_pointer(0, int(props.get_x_size() / 2), int(props.get_y_size()))
 
 
 class GameApp(ShowBase):
