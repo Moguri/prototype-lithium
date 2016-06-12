@@ -23,6 +23,13 @@ class GameApp(ShowBase):
         ShowBase.__init__(self)
         blenderpanda.init(self)
         self.accept('escape', sys.exit)
+        self.disableMouse()
+
+        self.level = self.loader.load_model('cathedral.bam')
+        self.level.reparent_to(self.render)
+
+        level_camera = self.level.find('**/Camera')
+        self.camera.set_pos(level_camera.get_pos())
 
 
 app = GameApp()
