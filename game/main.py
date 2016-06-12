@@ -8,11 +8,6 @@ from direct.showbase.ShowBase import ShowBase
 import panda3d.core as p3d
 import blenderpanda
 
-p3d.load_prc_file_data(
-    '',
-    'framebuffer-srgb true\n'
-)
-
 
 # Load config files
 p3d.load_prc_file('config/game.prc')
