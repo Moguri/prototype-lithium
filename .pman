@@ -1,12 +1,13 @@
+[general]
+name = Game
+render_plugin = 
+
 [build]
 asset_dir = assets/
 export_dir = game/assets/
+ignore_exts = blend1, blend2
 
 [run]
-auto_build = True
 main_file = game/main.py
-
-[general]
-render_plugin = 
-name = Game
+auto_build = True
 

@@ -1,6 +1,14 @@
-from importlib.machinery import SourceFileLoader
+try:
+    from importlib.machinery import SourceFileLoader
+    HAS_SFL = True
+except ImportError:
+    import imp
+    HAS_SFL = False
 
-from . import pman
+try:
+    import pman
+except ImportError:
+    from . import pman
 
 
 class BasicRenderManager:
@@ -19,13 +27,17 @@ def create_render_manager(base, config=None):
             print("RenderManager: Could not find pman config, falling back to basic plugin")
             config = None
 
-    renderplugin = config['general']['render_plugin'] if config else ''
+    renderplugin = config.get('general', 'render_plugin') if config else ''
 
     if not renderplugin:
         return BasicRenderManager(base)
 
     path = pman.get_abs_path(config, renderplugin)
-    mod = SourceFileLoader("render_plugin", path).load_module()
+
+    if HAS_SFL:
+        mod = SourceFileLoader("render_plugin", path).load_module()
+    else:
+        mod = imp.load_source("render_plugin", path)
 
     return mod.get_plugin()(base)
 
