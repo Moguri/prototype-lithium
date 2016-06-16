@@ -62,7 +62,7 @@ class CharacterComponent(ecs.Component):
         super().__init__()
         self.movement = p3d.LVector3(0, 0, 0)
         self.rotation = 0
-        self.move_speed = 10
+        self.move_speed = 20
 
 
 class Camera3PComponent(ecs.Component):
@@ -88,7 +88,7 @@ class CharacterSystem(ecs.System):
         for char in components['CHARACTER']:
             np = char.entity.get_component('NODEPATH').nodepath
 
-            move_vec = char.movement * char.move_speed * dt
+            move_vec = char.movement.normalized() * char.move_speed * dt
             np.set_pos(np, move_vec)
             np.set_h(char.rotation)
 
@@ -103,8 +103,8 @@ class Camera3PSystem(ecs.System):
             cam = camcomp.camera
             target = camcomp.target
 
-            cam.set_pos(target, p3d.LVector3(0, -10, 2))
-            cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 2))
+            cam.set_pos(target, p3d.LVector3(0, -20, 2))
+            cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 1))
 
 
 class PhysicsSystem(ecs.System):

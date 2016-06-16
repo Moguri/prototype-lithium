@@ -90,7 +90,7 @@ class GameState(DirectObject):
         # Mouse look
         char = self.player.get_component('CHARACTER')
         if base.mouseWatcherNode.has_mouse():
-            char.rotation -= base.mouseWatcherNode.get_mouse_x() * dt * 1000
+            char.rotation -= base.mouseWatcherNode.get_mouse_x() * dt * 2000
 
             # reset mouse to center
             props = base.win.get_properties()
