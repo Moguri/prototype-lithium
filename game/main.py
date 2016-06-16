@@ -89,12 +89,20 @@ class GameState(DirectObject):
     def update(self, dt):
         # Mouse look
         char = self.player.get_component('CHARACTER')
+        cam = self.camera.get_component('CAMERA3P')
+
         if base.mouseWatcherNode.has_mouse():
             char.rotation -= base.mouseWatcherNode.get_mouse_x() * dt * 2000
+            cam.pitch -= base.mouseWatcherNode.get_mouse_y() * dt * 2000
+
+            if cam.pitch > 90:
+                cam.pitch = 90
+            elif cam.pitch < -90:
+                cam.pitch = -90
 
             # reset mouse to center
             props = base.win.get_properties()
-            base.win.move_pointer(0, int(props.get_x_size() / 2), int(props.get_y_size()))
+            base.win.move_pointer(0, int(props.get_x_size() / 2), int(props.get_y_size() / 2))
 
 
 class GameApp(ShowBase):

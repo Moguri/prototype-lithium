@@ -69,6 +69,7 @@ class Camera3PComponent(ecs.Component):
     __slots__ = [
         'target',
         'camera',
+        'pitch',
     ]
 
     typeid = 'CAMERA3P'
@@ -78,6 +79,7 @@ class Camera3PComponent(ecs.Component):
 
         self.camera = camera
         self.target = targetnp
+        self.pitch = 0
 
 class CharacterSystem(ecs.System):
     component_types = [
@@ -103,7 +105,11 @@ class Camera3PSystem(ecs.System):
             cam = camcomp.camera
             target = camcomp.target
 
-            cam.set_pos(target, p3d.LVector3(0, -20, 2))
+            z = camcomp.pitch / 90
+            z *= 3
+            #print(camcomp.pitch, z)
+
+            cam.set_pos(target, p3d.LVector3(0, -20, z))
             cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 1))
 
 
