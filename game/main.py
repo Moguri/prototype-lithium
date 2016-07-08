@@ -92,13 +92,13 @@ class GameState(DirectObject):
         cam = self.camera.get_component('CAMERA3P')
 
         if base.mouseWatcherNode.has_mouse():
-            char.rotation -= base.mouseWatcherNode.get_mouse_x() * dt * 2000
+            dx = base.mouseWatcherNode.get_mouse_x() * dt * 2000
+            char.rotation -= dx
+            cam.yaw -= dx
             cam.pitch -= base.mouseWatcherNode.get_mouse_y() * dt * 2000
 
-            if cam.pitch > 90:
-                cam.pitch = 90
-            elif cam.pitch < -90:
-                cam.pitch = -90
+            # Clamp pitch value
+            cam.pitch = max(min(cam.pitch, cam.pitch_max + 90), cam.pitch_min + 90)
 
             # reset mouse to center
             props = base.win.get_properties()

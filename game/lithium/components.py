@@ -1,3 +1,5 @@
+from . import pytweening as tween
+
 from panda3d import core as p3d
 from panda3d import bullet
 from bamboo import ecs
@@ -69,7 +71,15 @@ class Camera3PComponent(ecs.Component):
     __slots__ = [
         'target',
         'camera',
+        'yaw',
         'pitch',
+        'pitch_max',
+        'pitch_min',
+        'roll',
+        'x_offset',
+        'y_offset',
+        'distance',
+        'fov'
     ]
 
     typeid = 'CAMERA3P'
@@ -80,6 +90,10 @@ class Camera3PComponent(ecs.Component):
         self.camera = camera
         self.target = targetnp
         self.pitch = 0
+        self.pitch_max = 70
+        self.pitch_min = -50
+        self.yaw = 0
+        self.distance = 6
 
 class CharacterSystem(ecs.System):
     component_types = [
@@ -105,11 +119,30 @@ class Camera3PSystem(ecs.System):
             cam = camcomp.camera
             target = camcomp.target
 
-            z = camcomp.pitch / 90
-            z *= 3
-            #print(camcomp.pitch, z)
+            # Normalize pitch
+            pitch_t = (camcomp.pitch - 90) / 90
 
-            cam.set_pos(target, p3d.LVector3(0, -20, z))
+            # Compute distance and FoV scaling based on pitch
+            if pitch_t < 0:
+                distance_t = (camcomp.pitch - 90) / camcomp.pitch_min
+                distance_t = tween.easeInCubic(distance_t)
+                distance_t = 1.0 - 0.6 * distance_t
+            else:
+                distance_t = (camcomp.pitch - 90) / camcomp.pitch_max
+                distance_t = tween.easeInQuad(distance_t)
+                distance_t = 1.0 + 0.7 * distance_t
+
+
+            # Apply rotation and distance
+            rotation = p3d.Mat3.rotate_mat(90 - (0.5*pitch_t+0.5) * 180, p3d.LVector3(1, 0, 0))
+            rotation = rotation * p3d.Mat3.rotate_mat(camcomp.yaw, p3d.LVector3(0, 0, 1))
+
+            position = p3d.LVector3(0, -camcomp.distance * distance_t, 0)
+
+            position = rotation.xform(position)
+            position += target.get_pos()
+
+            cam.set_pos(position)
             cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 1))
 
 
@@ -139,4 +172,3 @@ class PhysicsSystem(ecs.System):
             self._debugnp.reparent_to(np)
         elif not enable and np.is_ancestor_of(self._debugnp):
             self._debugnp.detach_node()
-
