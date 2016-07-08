@@ -63,3 +63,4 @@ target/
 user.prc
 game/assets
 *.swp
+*.blend?
