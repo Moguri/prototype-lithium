@@ -1,3 +1,5 @@
+import math
+
 from . import pytweening as tween
 
 from panda3d import core as p3d
@@ -105,8 +107,12 @@ class CharacterSystem(ecs.System):
             np = char.entity.get_component('NODEPATH').nodepath
 
             move_vec = char.movement.normalized() * char.move_speed * dt
-            np.set_pos(np, move_vec)
-            np.set_h(char.rotation)
+            np.set_pos(np.get_pos() + move_vec)
+
+            # Face character toward direction of travel
+            if move_vec.length_squared() != 0.0:
+                char.rotation = math.degrees(math.atan2(-move_vec.x, move_vec.y))
+                np.set_h(char.rotation)
 
 
 class Camera3PSystem(ecs.System):

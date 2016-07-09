@@ -50,6 +50,7 @@ class GameState(DirectObject):
         self.level.reparent_to(base.render)
 
         # Player movement
+        self.player_movement = p3d.LVector3(0, 0, 0)
         def update_movement(direction, activate):
             char = self.player.get_component('CHARACTER')
             move_delta = p3d.LVector3(0, 0, 0)
@@ -66,7 +67,8 @@ class GameState(DirectObject):
             if not activate:
                 move_delta *= -1
 
-            char.movement += move_delta
+            self.player_movement += move_delta
+
         self.accept('move-forward', update_movement, ['forward', True])
         self.accept('move-forward-up', update_movement, ['forward', False])
         self.accept('move-backward', update_movement, ['backward', True])
@@ -92,9 +94,7 @@ class GameState(DirectObject):
         cam = self.camera.get_component('CAMERA3P')
 
         if base.mouseWatcherNode.has_mouse():
-            dx = base.mouseWatcherNode.get_mouse_x() * dt * 2000
-            char.rotation -= dx
-            cam.yaw -= dx
+            cam.yaw -= base.mouseWatcherNode.get_mouse_x() * dt * 2000
             cam.pitch -= base.mouseWatcherNode.get_mouse_y() * dt * 2000
 
             # Clamp pitch value
@@ -104,6 +104,10 @@ class GameState(DirectObject):
             props = base.win.get_properties()
             base.win.move_pointer(0, int(props.get_x_size() / 2), int(props.get_y_size() / 2))
 
+        # Set the player's movement relative to the camera
+        camera = self.camera.get_component('CAMERA3P').camera
+        char.movement = base.render.get_relative_vector(camera, self.player_movement)
+        char.movement.set_z(0)
 
 class GameApp(ShowBase):
     def __init__(self):
