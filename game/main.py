@@ -101,9 +101,6 @@ class GameState(DirectObject):
             cam.yaw -= base.mouseWatcherNode.get_mouse_x() * dt * 2000
             cam.pitch -= base.mouseWatcherNode.get_mouse_y() * dt * 2000
 
-            # Clamp pitch value
-            cam.pitch = max(min(cam.pitch, cam.pitch_max + 90), cam.pitch_min + 90)
-
             # reset mouse to center
             props = base.win.get_properties()
             base.win.move_pointer(0, int(props.get_x_size() / 2), int(props.get_y_size() / 2))

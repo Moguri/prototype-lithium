@@ -125,6 +125,9 @@ class Camera3PSystem(ecs.System):
             cam = camcomp.camera
             target = camcomp.target
 
+            # Clamp pitch value
+            camcomp.pitch = max(min(camcomp.pitch, camcomp.pitch_max + 90), camcomp.pitch_min + 90)
+
             # Normalize pitch
             pitch_t = (camcomp.pitch - 90) / 90
 
