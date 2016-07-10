@@ -152,6 +152,19 @@ class Camera3PSystem(ecs.System):
             cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 1))
 
 
+class PhysicsStaticMeshComponent(ecs.Component):
+    __slots__ = [
+        'physics_node',
+    ]
+
+    typeid = 'PHYSICS'
+
+    def __init__(self, phynode):
+        super().__init__()
+
+        self.physics_node = phynode
+
+
 class PhysicsSystem(ecs.System):
     __slots__ = [
         'physics_world',
@@ -160,6 +173,7 @@ class PhysicsSystem(ecs.System):
     ]
 
     component_types = [
+        'PHYSICS',
     ]
 
     def __init__(self):
@@ -173,8 +187,15 @@ class PhysicsSystem(ecs.System):
         self._debugnp.show()
         self.physics_world.set_debug_node(phydebug)
 
-    def set_debug(np, enable):
+    def set_debug(self, np, enable):
         if enable and not np.is_ancestor_of(self._debugnp):
             self._debugnp.reparent_to(np)
         elif not enable and np.is_ancestor_of(self._debugnp):
             self._debugnp.detach_node()
+
+    def init_components(self, dt, components):
+        for phycomp in components['PHYSICS']:
+            self.physics_world.attach(phycomp.physics_node)
+
+    def update(self, dt, components):
+        self.physics_world.do_physics(dt, 10, 1/60)

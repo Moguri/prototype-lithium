@@ -33,11 +33,18 @@ class GameState(DirectObject):
         spacenp.reparent_to(base.render)
 
         # Load assets
+        self.level_entity = base.ecsmanager.create_entity()
         self.level = loader.load_model('cathedral.bam')
         level_start = self.level.find('**/PlayerStart')
-        self.level.reparent_to(base.render)
+        self.level.reparent_to(spacenp)
         for light in self.level.find_all_matches('**/+Light'):
             base.render.set_light(light)
+
+        for phynode in self.level.find_all_matches('**/+BulletBodyNode'):
+            if not phynode.is_hidden():
+                self.level_entity.add_component(components.PhysicsStaticMeshComponent(phynode.node()))
+            else:
+                print("Skipping hidden node", phynode)
 
         self.player = base.template_factory.make_character('character.bam', level_start.get_pos())
 
@@ -45,9 +52,6 @@ class GameState(DirectObject):
         playernp = self.player.get_component('NODEPATH').nodepath
         self.camera = base.ecsmanager.create_entity()
         self.camera.add_component(components.Camera3PComponent(base.camera, playernp))
-
-        # Attach assets to the scene graph
-        self.level.reparent_to(base.render)
 
         # Player movement
         self.player_movement = p3d.LVector3(0, 0, 0)
@@ -122,10 +126,13 @@ class GameApp(ShowBase):
         systems = [
             components.CharacterSystem(),
             components.Camera3PSystem(),
+            components.PhysicsSystem(),
         ]
 
         for system in systems:
             self.ecsmanager.add_system(system)
+
+        #systems[-1].set_debug(self.render, True)
 
         self.template_factory = components.TemplateFactory(self.ecsmanager)
 
