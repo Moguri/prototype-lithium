@@ -61,6 +61,7 @@ class CharacterComponent(ecs.Component):
         'movement',
         'rotation',
         'move_speed',
+        'jump',
     ]
 
     typeid = 'CHARACTER'
@@ -70,6 +71,7 @@ class CharacterComponent(ecs.Component):
         self.movement = p3d.LVector3(0, 0, 0)
         self.rotation = 0
         self.move_speed = 500
+        self.jump = False
 
 
 class Camera3PComponent(ecs.Component):
@@ -109,16 +111,21 @@ class CharacterSystem(ecs.System):
     def update(self, dt, components):
         for char in components['CHARACTER']:
             np = char.entity.get_component('NODEPATH').nodepath
-
-            move_vec = char.movement.normalized() * char.move_speed * dt
             phys = char.entity.get_component('PHY_CHARACTER').physics_node
+
+            # Position
+            move_vec = char.movement.normalized() * char.move_speed * dt
             phys.set_linear_movement(move_vec, is_local=False)
-            #np.set_pos(np.get_pos() + move_vec)
 
             # Face character toward direction of travel
             if move_vec.length_squared() != 0.0:
                 char.rotation = math.degrees(math.atan2(-move_vec.x, move_vec.y))
                 np.set_h(char.rotation)
+
+            # Jumping
+            if char.jump:
+                phys.do_jump()
+                char.jump = False
 
 
 class Camera3PSystem(ecs.System):
@@ -186,12 +193,12 @@ class PhysicsCharacterComponent(ecs.Component):
 
         height = 1.75
         radius = 0.4
-        step_height = 0.4
+        step_height = 0.8
 
         shape = bullet.BulletCapsuleShape(radius, height - 2 * radius, bullet.ZUp)
         self.physics_node = bullet.BulletCharacterControllerNode(shape, step_height, 'Character')
 
-        self.physics_node.set_jump_speed(30)
+        self.physics_node.set_jump_speed(20)
         self.physics_node.set_gravity(98)
 
 

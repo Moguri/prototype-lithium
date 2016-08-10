@@ -56,7 +56,6 @@ class GameState(DirectObject):
         # Player movement
         self.player_movement = p3d.LVector3(0, 0, 0)
         def update_movement(direction, activate):
-            char = self.player.get_component('CHARACTER')
             move_delta = p3d.LVector3(0, 0, 0)
 
             if direction == 'forward':
@@ -81,6 +80,12 @@ class GameState(DirectObject):
         self.accept('move-left-up', update_movement, ['left', False])
         self.accept('move-right', update_movement, ['right', True])
         self.accept('move-right-up', update_movement, ['right', False])
+
+        def jump():
+            char = self.player.get_component('CHARACTER')
+            char.jump = True
+        self.accept('jump', jump)
+
 
         # Mouse look
         props = p3d.WindowProperties()
@@ -108,7 +113,6 @@ class GameState(DirectObject):
         # Set the player's movement relative to the camera
         camera = self.camera.get_component('CAMERA3P').camera
         char.movement = base.render.get_relative_vector(camera, self.player_movement)
-        char.movement.set_z(0)
 
 class GameApp(ShowBase):
     def __init__(self):
