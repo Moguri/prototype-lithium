@@ -23,6 +23,9 @@ class TemplateFactory:
         char_component = CharacterComponent()
         entity.add_component(char_component)
 
+        phy_char = PhysicsCharacterComponent()
+        entity.add_component(phy_char)
+
         return entity
 
 class NodePathComponent(ecs.Component):
@@ -66,7 +69,7 @@ class CharacterComponent(ecs.Component):
         super().__init__()
         self.movement = p3d.LVector3(0, 0, 0)
         self.rotation = 0
-        self.move_speed = 20
+        self.move_speed = 500
 
 
 class Camera3PComponent(ecs.Component):
@@ -97,6 +100,7 @@ class Camera3PComponent(ecs.Component):
         self.yaw = 0
         self.distance = 6
 
+
 class CharacterSystem(ecs.System):
     component_types = [
         'CHARACTER',
@@ -107,7 +111,9 @@ class CharacterSystem(ecs.System):
             np = char.entity.get_component('NODEPATH').nodepath
 
             move_vec = char.movement.normalized() * char.move_speed * dt
-            np.set_pos(np.get_pos() + move_vec)
+            phys = char.entity.get_component('PHY_CHARACTER').physics_node
+            phys.set_linear_movement(move_vec, is_local=False)
+            #np.set_pos(np.get_pos() + move_vec)
 
             # Face character toward direction of travel
             if move_vec.length_squared() != 0.0:
@@ -149,10 +155,10 @@ class Camera3PSystem(ecs.System):
             position = p3d.LVector3(0, -camcomp.distance * distance_t, 0)
 
             position = rotation.xform(position)
-            position += target.get_pos()
+            position += target.get_pos(base.render)
 
             cam.set_pos(position)
-            cam.look_at(target.get_pos() + p3d.LVector3(0, 0, 1))
+            cam.look_at(target.get_pos(base.render) + p3d.LVector3(0, 0, 1))
 
 
 class PhysicsStaticMeshComponent(ecs.Component):
@@ -160,12 +166,33 @@ class PhysicsStaticMeshComponent(ecs.Component):
         'physics_node',
     ]
 
-    typeid = 'PHYSICS'
+    typeid = 'PHY_STATICMESH'
 
     def __init__(self, phynode):
         super().__init__()
 
         self.physics_node = phynode
+
+
+class PhysicsCharacterComponent(ecs.Component):
+    __slots__ = [
+        'physics_node',
+    ]
+
+    typeid = 'PHY_CHARACTER'
+
+    def __init__(self):
+        super().__init__()
+
+        height = 1.75
+        radius = 0.4
+        step_height = 0.4
+
+        shape = bullet.BulletCapsuleShape(radius, height - 2 * radius, bullet.ZUp)
+        self.physics_node = bullet.BulletCharacterControllerNode(shape, step_height, 'Character')
+
+        self.physics_node.set_jump_speed(30)
+        self.physics_node.set_gravity(98)
 
 
 class PhysicsSystem(ecs.System):
@@ -176,7 +203,8 @@ class PhysicsSystem(ecs.System):
     ]
 
     component_types = [
-        'PHYSICS',
+        'PHY_STATICMESH',
+        'PHY_CHARACTER',
     ]
 
     def __init__(self):
@@ -185,7 +213,7 @@ class PhysicsSystem(ecs.System):
         self.physics_world = bullet.BulletWorld()
         phydebug = bullet.BulletDebugNode('Physics Debug')
         phydebug.show_wireframe(True)
-        phydebug.show_bounding_boxes(True)
+        #phydebug.show_bounding_boxes(True)
         self._debugnp = p3d.NodePath(phydebug)
         self._debugnp.show()
         self.physics_world.set_debug_node(phydebug)
@@ -197,8 +225,16 @@ class PhysicsSystem(ecs.System):
             self._debugnp.detach_node()
 
     def init_components(self, dt, components):
-        for phycomp in components['PHYSICS']:
-            self.physics_world.attach(phycomp.physics_node)
+        for static_mesh in components.get('PHY_STATICMESH', []):
+            self.physics_world.attach(static_mesh.physics_node)
+
+        for character in components.get('PHY_CHARACTER', []):
+            np = character.entity.get_component('NODEPATH').nodepath
+            phynp = np.get_parent().attach_new_node(character.physics_node)
+            phynp.set_pos(np.get_pos())
+            np.reparent_to(phynp)
+            np.set_pos(p3d.LVector3(0, 0, 0))
+            self.physics_world.attach(character.physics_node)
 
     def update(self, dt, components):
-        self.physics_world.do_physics(dt, 10, 1/60)
+        self.physics_world.do_physics(dt, 10, 1/120)
