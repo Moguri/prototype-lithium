@@ -96,7 +96,7 @@ class Camera3PComponent(ecs.Component):
 
         self.camera = camera
         self.target = targetnp
-        self.pitch = 0
+        self.pitch = 100
         self.pitch_max = 70
         self.pitch_min = -50
         self.yaw = 0

@@ -93,18 +93,24 @@ class GameState(DirectObject):
         props.set_mouse_mode(p3d.WindowProperties.M_confined)
         base.win.request_properties(props)
 
-        # reset mouse to center
-        props = base.win.get_properties()
-        base.win.move_pointer(0, int(props.get_x_size() / 2), int(props.get_y_size()))
-
     def update(self, dt):
         # Mouse look
         char = self.player.get_component('CHARACTER')
         cam = self.camera.get_component('CAMERA3P')
 
         if base.mouseWatcherNode.has_mouse():
-            cam.yaw -= base.mouseWatcherNode.get_mouse_x() * dt * 2000
-            cam.pitch -= base.mouseWatcherNode.get_mouse_y() * dt * 2000
+            delta_yaw = base.mouseWatcherNode.get_mouse_x() * dt * 2000
+            delta_pitch = base.mouseWatcherNode.get_mouse_y() * dt * 2000
+
+            # Prevent camera from jumping if the mouse pointer has moved too far
+            max_thresh = 10
+            if delta_yaw > max_thresh or delta_yaw < -max_thresh:
+                delta_yaw = 0
+            if delta_pitch > max_thresh or delta_pitch < -max_thresh:
+                delta_pitch = 0
+
+            cam.yaw -= delta_yaw
+            cam.pitch -= delta_pitch
 
             # reset mouse to center
             props = base.win.get_properties()
