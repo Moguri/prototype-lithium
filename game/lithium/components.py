@@ -250,4 +250,5 @@ class PhysicsSystem(ecs.System):
             self.physics_world.attach(character.physics_node)
 
     def update(self, dt, components):
-        self.physics_world.do_physics(dt, 10, 1/120)
+        self.physics_world.do_physics(1.0/60.0, 10, 1.0/180.0)
+        #self.physics_world.do_physics(dt, 10, 1.0/180.0)
