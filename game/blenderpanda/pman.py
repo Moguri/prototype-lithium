@@ -1,3 +1,4 @@
+import fnmatch
 import os
 import shutil
 import subprocess
@@ -11,8 +12,7 @@ except ImportError:
 
 
 class PManException(Exception):
-    def __init__(self, value):
-        self.value = value
+    pass
 
 
 class NoConfigError(PManException):
@@ -27,6 +27,18 @@ class BuildError(PManException):
     pass
 
 
+class FrozenEnvironmentError(PManException):
+    def __init__(self):
+        PManException.__init__(self, "Operation not supported in frozen applications")
+
+
+if '__file__' not in globals():
+    __is_frozen = True
+    __file__ = ''
+else:
+    __is_frozen = False
+
+
 _config_defaults = OrderedDict([
     ('general', OrderedDict([
         ('name', 'Game'),
@@ -35,11 +47,19 @@ _config_defaults = OrderedDict([
     ('build', OrderedDict([
         ('asset_dir', 'assets/'),
         ('export_dir', 'game/assets/'),
-        ('ignore_exts', 'blend1, blend2'),
+        ('ignore_patterns', '*.blend1, *.blend2'),
     ])),
     ('run', OrderedDict([
         ('main_file', 'game/main.py'),
         ('auto_build', True),
+        ('auto_save', True),
+    ])),
+])
+
+_user_config_defaults = OrderedDict([
+    ('blender', OrderedDict([
+        ('last_path', 'blender'),
+        ('use_last_path', True),
     ])),
 ])
 
@@ -51,8 +71,7 @@ def __py2_read_dict(config, d):
         for option, value in options.items():
             config.set(section, option, value)
 
-
-def get_config(startdir=None):
+def _get_config(startdir, conf_name, defaults):
     try:
         if startdir is None:
             startdir = os.getcwd()
@@ -64,13 +83,13 @@ def get_config(startdir=None):
 
     while dirs:
         cdir = os.sep.join(dirs)
-        if cdir.strip() and '.pman' in os.listdir(cdir):
-            configpath = os.path.join(cdir, '.pman')
+        if cdir.strip() and conf_name in os.listdir(cdir):
+            configpath = os.path.join(cdir, conf_name)
             config = configparser.ConfigParser()
             if hasattr(config, 'read_dict'):
-                config.read_dict(_config_defaults)
+                config.read_dict(defaults)
             else:
-                __py2_read_dict(config, _config_defaults)
+                __py2_read_dict(config, defaults)
             config.read(configpath)
 
             config.add_section('internal')
@@ -83,45 +102,77 @@ def get_config(startdir=None):
     raise NoConfigError("Could not find config file")
 
 
+def get_config(startdir=None):
+    return _get_config(startdir, '.pman',  _config_defaults)
+
+
+def get_user_config(startdir=None):
+    try:
+        return _get_config(startdir, '.pman.user', _user_config_defaults)
+    except NoConfigError:
+        # No user config, just create one
+        config = get_config(startdir)
+        fp = os.path.join(config.get('internal', 'projectdir'), '.pman.user')
+        print("Creating user config at {}".format(fp))
+        with open(fp, 'w') as f:
+            pass
+
+        return _get_config(startdir, '.pman.user', _user_config_defaults)
+
+
+def _write_config(config, conf_name):
+    writecfg = configparser.ConfigParser()
+    writecfg.read_dict(config)
+    writecfg.remove_section('internal')
+
+    with open(os.path.join(config.get('internal', 'projectdir'), conf_name), 'w') as f:
+        writecfg.write(f)
+
+
+def write_config(config):
+    _write_config(config, '.pman')
+
+
+def write_user_config(user_config):
+    _write_config(user_config, '.pman.user')
+
+
+def is_frozen():
+    return __is_frozen
+
+
 def get_python_program(config):
-    # Always use ppython on Windows
-    if sys.platform == 'win32':
-        return 'ppython'
+    python_programs = [
+        'ppython',
+        'python3',
+        'python',
+        'python2',
+    ]
 
     # Check to see if there is a version of Python that can import panda3d
-    args = [
-        'python3',
-        '-c',
-        'import panda3d.core; import direct',
-    ]
-    with open(os.devnull, 'w') as fp:
-        retcode = subprocess.call(args, stderr=fp)
+    for pyprog in python_programs:
+        args = [
+            pyprog,
+            '-c',
+            'import panda3d.core; import direct',
+        ]
+        with open(os.devnull, 'w') as fp:
+            try:
+                retcode = subprocess.call(args, stderr=fp)
+            except FileNotFoundError:
+                retcode = 1
 
-    if retcode == 0:
-        return 'python3'
-
-    # python3 didn't work, try python2
-    args[0] = 'python2'
-    with open(os.devnull, 'w') as fp:
-        retcode = subprocess.call(args, stderr=fp)
-
-    if retcode == 0:
-        return 'python2'
+        if retcode == 0:
+            return pyprog
 
     # We couldn't find a python program to run
     raise CouldNotFindPythonError('Could not find a usable Python install')
 
 
-def write_config(config):
-    writecfg = configparser.ConfigParser()
-    writecfg.read_dict(config)
-    writecfg.remove_section('internal')
-
-    with open(os.path.join(config.get('internal', 'projectdir'), '.pman'), 'w') as f:
-        writecfg.write(f)
-
-
 def create_project(projectdir):
+    if is_frozen():
+        raise FrozenEnvironmentError()
+
     confpath = os.path.join(projectdir, '.pman')
     if os.path.exists(confpath):
         print("Updating project in {}".format(projectdir))
@@ -202,8 +253,12 @@ def get_rel_path(config, path):
 
 
 def build(config=None):
+    if is_frozen():
+        raise FrozenEnvironmentError()
+
     if config is None:
         config = get_config()
+    user_config = get_user_config(config.get('internal', 'projectdir'))
 
     if hasattr(time, 'perf_counter'):
         stime = time.perf_counter()
@@ -224,8 +279,8 @@ def build(config=None):
     print("Read assets from: {}".format(srcdir))
     print("Export them to: {}".format(dstdir))
 
-    ignore_exts = [i.strip() for i in config.get('build', 'ignore_exts').split(',')]
-    print("Ignoring extensions: {}".format(ignore_exts))
+    ignore_patterns = [i.strip() for i in config.get('build', 'ignore_patterns').split(',')]
+    print("Ignoring file patterns: {}".format(ignore_patterns))
 
     num_blends = 0
     for root, dirs, files in os.walk(srcdir):
@@ -233,13 +288,13 @@ def build(config=None):
             src = os.path.join(root, asset)
             dst = src.replace(srcdir, dstdir)
 
-            iext = None
-            for ext in ignore_exts:
-                if asset.endswith(ext):
-                    iext = ext
+            ignore_pattern = None
+            for pattern in ignore_patterns:
+                if fnmatch.fnmatch(asset, pattern):
+                    ignore_pattern = pattern
                     break
-            if iext is not None:
-                print('Skip building file with ignored extension ({}): {}'.format(iext, dst))
+            if ignore_pattern is not None:
+                print('Skip building file {} that matched ignore pattern {}'.format(asset, ignore_pattern))
                 continue
 
             if asset.endswith('.blend'):
@@ -259,8 +314,9 @@ def build(config=None):
                 shutil.copyfile(src, dst)
 
     if num_blends > 0:
+        blender_path = user_config.get('blender', 'last_path') if user_config.getboolean('blender', 'use_last_path') else 'blender'
         args = [
-            'blender',
+            blender_path,
             '-b',
             '-P',
             os.path.join(os.path.dirname(__file__), 'pman_build.py'),
@@ -268,6 +324,8 @@ def build(config=None):
             srcdir,
             dstdir,
         ]
+
+        #print("Calling blender: {}".format(' '.join(args)))
 
         subprocess.call(args, env=os.environ.copy())
 
@@ -279,6 +337,9 @@ def build(config=None):
 
 
 def run(config=None):
+    if is_frozen():
+        raise FrozenEnvironmentError()
+
     if config is None:
         config = get_config()
 

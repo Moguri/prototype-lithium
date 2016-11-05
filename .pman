@@ -5,9 +5,10 @@ render_plugin = game/bamboo/rendermanager.py
 [build]
 asset_dir = assets/
 export_dir = game/assets/
-ignore_exts = blend1, blend2
+ignore_patterns = *.blend1, *.blend2
 
 [run]
 main_file = game/main.py
 auto_build = True
+auto_save = True
 
