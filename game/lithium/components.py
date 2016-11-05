@@ -111,11 +111,11 @@ class CharacterSystem(ecs.System):
     def update(self, dt, components):
         for char in components['CHARACTER']:
             np = char.entity.get_component('NODEPATH').nodepath
-            phys = char.entity.get_component('PHY_CHARACTER').physics_node
+            phys = char.entity.get_component('PHY_CHARACTER')
 
             # Position
             move_vec = char.movement.normalized() * char.move_speed * dt
-            phys.set_linear_movement(move_vec, is_local=False)
+            phys.set_linear_movement(move_vec)
 
             # Face character toward direction of travel
             if move_vec.length_squared() != 0.0:
@@ -200,6 +200,12 @@ class PhysicsCharacterComponent(ecs.Component):
 
         self.physics_node.set_jump_speed(20)
         self.physics_node.set_gravity(98)
+
+    def set_linear_movement(self, vec):
+        self.physics_node.set_linear_movement(vec, is_local=False)
+
+    def do_jump(self):
+        self.physics_node.do_jump()
 
 
 class PhysicsSystem(ecs.System):
