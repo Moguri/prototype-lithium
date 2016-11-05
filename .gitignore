@@ -64,3 +64,4 @@ user.prc
 game/assets
 *.swp
 *.blend?
+.pman.user
