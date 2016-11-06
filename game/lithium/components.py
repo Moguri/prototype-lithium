@@ -196,16 +196,19 @@ class PhysicsCharacterComponent(ecs.Component):
         step_height = 0.8
 
         shape = bullet.BulletCapsuleShape(radius, height - 2 * radius, bullet.ZUp)
-        self.physics_node = bullet.BulletCharacterControllerNode(shape, step_height, 'Character')
+        self.physics_node = bullet.BulletRigidBodyNode('Character')
+        self.physics_node.add_shape(shape)
+        self.physics_node.set_angular_factor(0)
+        self.physics_node.set_mass(80.0)
+        self.physics_node.set_deactivation_enabled(False)
 
-        self.physics_node.set_jump_speed(20)
-        self.physics_node.set_gravity(98)
 
     def set_linear_movement(self, vec):
-        self.physics_node.set_linear_movement(vec, is_local=False)
+        vec.z = self.physics_node.get_linear_velocity().z
+        self.physics_node.set_linear_velocity(vec)
 
     def do_jump(self):
-        self.physics_node.do_jump()
+        self.physics_node.set_linear_velocity(p3d.LVector3(0, 0, 5))
 
 
 class PhysicsSystem(ecs.System):
@@ -224,6 +227,7 @@ class PhysicsSystem(ecs.System):
         super().__init__()
 
         self.physics_world = bullet.BulletWorld()
+        self.physics_world.set_gravity(p3d.LVector3(0, 0, -9.8))
         phydebug = bullet.BulletDebugNode('Physics Debug')
         phydebug.show_wireframe(True)
         #phydebug.show_bounding_boxes(True)
@@ -250,5 +254,4 @@ class PhysicsSystem(ecs.System):
             self.physics_world.attach(character.physics_node)
 
     def update(self, dt, components):
-        self.physics_world.do_physics(1.0/60.0, 10, 1.0/180.0)
-        #self.physics_world.do_physics(dt, 10, 1.0/180.0)
+        self.physics_world.do_physics(dt, 10, 1.0/180.0)

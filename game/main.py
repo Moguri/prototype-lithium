@@ -119,6 +119,7 @@ class GameState(DirectObject):
         # Set the player's movement relative to the camera
         camera = self.camera.get_component('CAMERA3P').camera
         char.movement = base.render.get_relative_vector(camera, self.player_movement)
+        char.movement.set_z(0)
 
 class GameApp(ShowBase):
     def __init__(self):
