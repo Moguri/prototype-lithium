@@ -11,11 +11,12 @@ class TemplateFactory:
     def __init__(self, ecsmanager):
         self.ecsmanager = ecsmanager
 
-    def make_character(self, modelpath, initial_position=None):
-        spacenp = self.ecsmanager.space.get_component('NODEPATH').nodepath
+    def make_character(self, modelpath, parent=None, initial_position=None):
+        if parent is None:
+            parent = self.ecsmanager.space.get_component('NODEPATH').nodepath
         entity = self.ecsmanager.create_entity()
 
-        np_component = NodePathComponent(modelpath, spacenp, '**/Character')
+        np_component = NodePathComponent(modelpath, parent, '**/Character')
         if initial_position is not None:
             np_component.nodepath.set_pos(initial_position)
         entity.add_component(np_component)

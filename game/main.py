@@ -37,8 +37,6 @@ class GameState(DirectObject):
         self.level = loader.load_model('cathedral.bam')
         level_start = self.level.find('**/PlayerStart')
         self.level.reparent_to(spacenp)
-        for light in self.level.find_all_matches('**/+Light'):
-            base.render.set_light(light)
 
         for phynode in self.level.find_all_matches('**/+BulletBodyNode'):
             if not phynode.is_hidden():
@@ -46,7 +44,7 @@ class GameState(DirectObject):
             else:
                 print("Skipping hidden node", phynode)
 
-        self.player = base.template_factory.make_character('character.bam', level_start.get_pos())
+        self.player = base.template_factory.make_character('character.bam', self.level, level_start.get_pos())
 
         # Attach camera to player
         playernp = self.player.get_component('NODEPATH').nodepath
