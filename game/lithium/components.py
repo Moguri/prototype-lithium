@@ -184,6 +184,9 @@ class PhysicsStaticMeshComponent(ecs.Component):
 class PhysicsCharacterComponent(ecs.Component):
     __slots__ = [
         'physics_node',
+        'height',
+        'air_control',
+        'airborne',
     ]
 
     typeid = 'PHY_CHARACTER'
@@ -191,24 +194,29 @@ class PhysicsCharacterComponent(ecs.Component):
     def __init__(self):
         super().__init__()
 
-        height = 1.75
+        self.height = 1.75
+        self.air_control = 0.8
+        self.airborne = False
+
         radius = 0.4
         step_height = 0.8
 
-        shape = bullet.BulletCapsuleShape(radius, height - 2 * radius, bullet.ZUp)
+        shape = bullet.BulletCapsuleShape(radius, self.height - 2 * radius, bullet.ZUp)
         self.physics_node = bullet.BulletRigidBodyNode('Character')
         self.physics_node.add_shape(shape)
         self.physics_node.set_angular_factor(0)
         self.physics_node.set_mass(80.0)
         self.physics_node.set_deactivation_enabled(False)
 
-
     def set_linear_movement(self, vec):
+        if self.airborne:
+            vec *= self.air_control
         vec.z = self.physics_node.get_linear_velocity().z
         self.physics_node.set_linear_velocity(vec)
 
     def do_jump(self):
-        self.physics_node.set_linear_velocity(p3d.LVector3(0, 0, 5))
+        if not self.airborne:
+            self.physics_node.set_linear_velocity(p3d.LVector3(0, 0, 5))
 
 
 class PhysicsSystem(ecs.System):
@@ -255,3 +263,14 @@ class PhysicsSystem(ecs.System):
 
     def update(self, dt, components):
         self.physics_world.do_physics(dt, 10, 1.0/180.0)
+
+        for character in components.get('PHY_CHARACTER', []):
+            phynode = character.physics_node
+            np = character.entity.get_component('NODEPATH').nodepath
+
+            # Air Check
+            frompt = np.get_pos(base.render) - p3d.LVector3(0, 0, character.height / 2.1)
+            topt = frompt + p3d.LVector3(0, 0, -0.25)
+            result = self.physics_world.ray_test_closest(frompt, topt)
+            #print(frompt, topt, result.has_hit(), result.get_node())
+            character.airborne = not result.has_hit()
