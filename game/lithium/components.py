@@ -70,7 +70,7 @@ class CharacterComponent(ecs.Component):
         super().__init__()
         self.movement = p3d.LVector3(0, 0, 0)
         self.rotation = 0
-        self.move_speed = 500
+        self.move_speed = 10
         self.jump = False
 
 
@@ -114,7 +114,7 @@ class CharacterSystem(ecs.System):
             phys = char.entity.get_component('PHY_CHARACTER')
 
             # Position
-            move_vec = char.movement.normalized() * char.move_speed * dt
+            move_vec = char.movement.normalized() * char.move_speed
             phys.set_linear_movement(move_vec)
 
             # Face character toward direction of travel
