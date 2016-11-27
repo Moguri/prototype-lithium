@@ -118,7 +118,7 @@ class CharacterSystem(ecs.System):
             phys.set_linear_movement(move_vec)
 
             # Face character toward direction of travel
-            if move_vec.length_squared() != 0.0:
+            if move_vec.length_squared() > 0.1:
                 char.rotation = math.degrees(math.atan2(-move_vec.x, move_vec.y))
                 np.set_h(char.rotation)
 
