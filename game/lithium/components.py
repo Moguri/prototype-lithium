@@ -240,14 +240,15 @@ class PhysicsSystem(ecs.System):
         phydebug.show_wireframe(True)
         #phydebug.show_bounding_boxes(True)
         self._debugnp = p3d.NodePath(phydebug)
-        self._debugnp.show()
         self.physics_world.set_debug_node(phydebug)
 
     def set_debug(self, np, enable):
         if enable and not np.is_ancestor_of(self._debugnp):
             self._debugnp.reparent_to(np)
+            self._debugnp.show()
         elif not enable and np.is_ancestor_of(self._debugnp):
             self._debugnp.detach_node()
+            self._debugnp.hide()
 
     def init_components(self, dt, components):
         for static_mesh in components.get('PHY_STATICMESH', []):
